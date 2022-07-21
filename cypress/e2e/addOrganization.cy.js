@@ -1,22 +1,49 @@
 /// <reference types="Cypress" />
 
-import { loginPage } from '../page_objects/loginPage';
-
+/// <reference types="Cypress" //
+import { organizationsPage } from '../page_objects/organizationsPage';
 
 describe('create organization test', () => {
-  const validEmail = 'marko.ranisavljev91@gmail.com';
-  const validPassword = 'miholjdan';
 
-  it('add organization', () => {
-    cy.visit('https://cypress.vivifyscrum-stage.com/');
-    cy.url().should('include', '/login');
-    cy.get("[type='email']").type(validEmail);
-    cy.get("[type='password']").type(validPassword)
-    cy.get('button').eq(0).click();
-    cy.url().should('not.include', 'login');
-    cy.get('div.vs-c-my-organization--add-new').click();
-    cy.get('input').type('Nova organizacija');
-    cy.get ('button[name="next_btn"]').click()
+  beforeEach('log in', () => {
+    cy.loginViaBackend()
+    cy.visit('/')
+  })
+  
+  it('create organization', () => {
+    let orgName = 'test org'
+
+    cy.intercept({
+      method: 'POST',
+      url: Cypress.env('API_BASE_URL') + '/organizations'
+    }).as('createOrganization')
+
+    cy.url().should('include', '/my-organizations')
+    organizationsPage.createOrganization(orgName)
+    cy.wait('@createOrganization').then(interception => {
+      expect(interception.response.statusCode).eq(201);
+      expect(interception.response.statusMessage).eq('Created')
+    })
+
+    cy.visit('/')
+    cy.url().should('include', '/my-organizations')
+    organizationsPage.organizationCard
+      .eq(-2)
+      .find('h2')
+      .should('have.text', orgName)
+
+  })
+
+  it.only('archive organization', () => {
+    cy.visit('/')
+    cy.url().should('include', '/my-organizations')
+
+    organizationsPage.organizationBtn.eq(2).click()
+    organizationsPage.okBtn.click();
+    organizationsPage.sidebarBtn.last().click();
+    organizationsPage.archiveBtn.click()
+    organizationsPage.yesBtn.click()
+    cy.contains('Organization is currently archived.')
   })
 
 })
