@@ -16,7 +16,7 @@ describe('create organization test', () => {
     cy.url().should('not.include', 'login');
     cy.get('div.vs-c-my-organization--add-new').click();
     cy.get('input').type('Nova organizacija');
-    cy.get ('button')
+    cy.get ('button[name="next_btn"]').click()
   })
 
 })
